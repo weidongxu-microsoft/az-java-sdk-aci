@@ -57,6 +57,10 @@ public class Main {
     }
 
     private static void createInstances(AzureResourceManager azure, List<String> resourceNames) {
+        azure.resourceGroups().define(RG_NAME)
+                .withRegion(REGION)
+                .create();
+
         Flux.fromStream(resourceNames.stream()
                 .map(name -> azure.containerGroups()
                         .define(name)
@@ -72,11 +76,7 @@ public class Main {
     }
 
     private static void deleteInstances(AzureResourceManager azure, List<String> resourceNames) {
-        Flux.fromStream(resourceNames.stream()
-                .map(name -> azure.containerGroups()
-                        .deleteByResourceGroupAsync(RG_NAME, name)))
-                .flatMap(r -> r)
-                .blockLast();
+        azure.resourceGroups().deleteByName(RG_NAME);
     }
 
     private static void stopInstances(AzureResourceManager azure, List<String> resourceNames) {
