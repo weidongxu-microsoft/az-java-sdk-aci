@@ -41,7 +41,7 @@ public class Main {
         AzureProfile profile = new AzureProfile(AzureEnvironment.AZURE);
 
         final AzureResourceManager azure = AzureResourceManager.configure()
-                .withLogLevel(HttpLogDetailLevel.BODY_AND_HEADERS)
+                .withLogLevel(HttpLogDetailLevel.NONE)
                 .authenticate(credential, profile)
                 .withDefaultSubscription();
 
@@ -52,11 +52,14 @@ public class Main {
 //        createInstances(azure, resourceNames);
 
         // make sure all instances are stopped, before the test in startInstancesWithLog
+        LOGGER.info("Stop all containers...");
         stopInstances(azure, resourceNames);
 
         // I don't know why, but service returns 409 "ContainerGroupTransitioning" when start immediately after stop
-        Thread.sleep(Duration.ofSeconds(10).toMillis());
+        LOGGER.info("Wait 5 minute for 'stop' operations to settle...");
+        Thread.sleep(Duration.ofMinutes(5).toMillis());
 
+        LOGGER.info("Start all containers...");
         startInstancesWithLog(azure, resourceNames);
 
 //        deleteInstances(azure, resourceNames);
