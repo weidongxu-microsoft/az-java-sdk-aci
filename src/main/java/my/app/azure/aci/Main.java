@@ -30,7 +30,7 @@ public class Main {
     private static final String RG_NAME = "rg-weidxu-aci";
     private static final Region REGION = Region.US_WEST3;
 
-    public static void main(String ...args) {
+    public static void main(String ...args) throws InterruptedException {
 
         // see https://github.com/Azure/azure-sdk-for-java/tree/main/sdk/resourcemanager#authentication for environment variables
 
@@ -49,13 +49,17 @@ public class Main {
                 .mapToObj(n -> "aci-weidxu-name" + n)
                 .collect(Collectors.toList());
 
-        createInstances(azure, resourceNames);
+//        createInstances(azure, resourceNames);
 
+        // make sure all instances are stopped, before the test in startInstancesWithLog
         stopInstances(azure, resourceNames);
+
+        // I don't know why, but service returns 409 "ContainerGroupTransitioning" when start immediately after stop
+        Thread.sleep(Duration.ofSeconds(10).toMillis());
 
         startInstancesWithLog(azure, resourceNames);
 
-        deleteInstances(azure, resourceNames);
+//        deleteInstances(azure, resourceNames);
     }
 
     private static void createInstances(AzureResourceManager azure, List<String> resourceNames) {
@@ -146,6 +150,12 @@ public class Main {
             String state = provisionStates.get(name);
             long durationInSeconds = (complete - start) / 1_000_000_000;
             LOGGER.info("Container Group: {}, Provisioning State: {}, Time Taken (seconds): {}", name, state, durationInSeconds);
+        });
+
+        // get log from container instance
+        resourceNames.forEach(name -> {
+            String containerLog = azure.containerGroups().getLogContent(RG_NAME, name, name);
+            LOGGER.info("Container Group: {}, Log Content: {}", name, containerLog);
         });
     }
 }
