@@ -11,6 +11,8 @@ import com.azure.core.util.polling.LongRunningOperationStatus;
 import com.azure.core.util.polling.PollerFlux;
 import com.azure.identity.DefaultAzureCredentialBuilder;
 import com.azure.resourcemanager.AzureResourceManager;
+import com.azure.resourcemanager.network.models.Network;
+import com.azure.resourcemanager.network.models.Subnet;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -57,9 +59,22 @@ public class Main {
     }
 
     private static void createInstances(AzureResourceManager azure, List<String> resourceNames) {
+        // create resource group
         azure.resourceGroups().define(RG_NAME)
                 .withRegion(REGION)
                 .create();
+
+        // create virtual network
+        Network network = azure.networks().define("vnet-weidxu-aci")
+                .withRegion(REGION)
+                .withExistingResourceGroup(RG_NAME)
+                .withAddressSpace("10.0.0.0/24")
+                .defineSubnet("default")
+                .withAddressPrefix("10.0.0.0/24")
+                .withDelegation("Microsoft.ContainerInstance/containerGroups")
+                .attach()
+                .create();
+        Subnet subnet = network.subnets().get("default");
 
         Flux.fromStream(resourceNames.stream()
                 .map(name -> azure.containerGroups()
@@ -70,6 +85,7 @@ public class Main {
                         .withPublicImageRegistryOnly()
                         .withoutVolume()
                         .withContainerInstance("nginx", 80)
+                        .withExistingSubnet(subnet)
                         .createAsync()))
                 .flatMap(r -> r)
                 .blockLast();
