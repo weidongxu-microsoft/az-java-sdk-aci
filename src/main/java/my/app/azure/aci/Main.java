@@ -59,6 +59,8 @@ public class Main {
         LOGGER.info("Wait 5 minute for 'stop' operations to settle...");
         Thread.sleep(Duration.ofMinutes(5).toMillis());
 
+        // with public image registry, rate limit from docker hub could apply, and 409 "RegistryErrorResponse" can happen
+        // but I didn't use private registry to test, as I don't want to put a username or identity here
         LOGGER.info("Start all containers...");
         startInstancesWithLog(azure, resourceNames);
 
