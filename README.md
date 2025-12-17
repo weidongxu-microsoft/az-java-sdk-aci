@@ -1,11 +1,30 @@
-# Sample project for Azure Active Directory via Azure Java Management SDK
+# Azure Container Instances Java Sample
 
-```
-mvn clean package
-mvn exec:java
-```
+## Prerequisites
 
-Typeical output:
+- Java 11 or later
+- Maven
+- An Azure subscription with permission to manage Container Instances
+- Authentication configured for the Java SDK (see the [Azure SDK authentication guide](https://github.com/Azure/azure-sdk-for-java/tree/main/sdk/resourcemanager#authentication))
+- `AZURE_SUBSCRIPTION_ID` in environment variables so the sample can bind to the correct subscription
+
+## Run the sample
+
+1. Install dependencies and compile:
+
+	```
+	mvn clean package
+	```
+
+2. Execute the entry point:
+
+	```
+	mvn exec:java
+	```
+
+The app stops each container group, sleeps for five minutes to allow Azure to settle, then restarts the fleet with a shortened poll interval so provisioning progress be updated quicker than default interval.
+
+## Sample output
 
 ```
 11:31:53.908 [c.a.c.u.l.ClientLogger] INFO  [my.app.azure.aci.Main.main()] - Wait 5 minute for 'stop' operations to settle...
@@ -37,3 +56,10 @@ Typeical output:
 2025/12/17 03:37:24 [notice] 18#18: start worker processes
 2025/12/17 03:37:24 [notice] 18#18: start worker process 45
 ```
+
+Each container group writes the provisioning state and duration to the log, followed by the container's stdout/stderr stream (nginx in this sample).
+
+## Troubleshooting
+
+- Public container registries such as Docker Hub enforce pull limits and can emit `409 RegistryErrorResponse`. Consider referencing an Azure Container Registry image for production scenarios.
+- Set `AZURE_LOG_LEVEL=body` (or adjust the `HttpLogDetailLevel`) if you need to inspect the REST payloads for debugging.
